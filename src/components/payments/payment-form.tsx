@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency, formatAmountInput } from "@/lib/formatters";
 
 interface PaymentFormProps {
   amount?: number;
@@ -75,7 +75,7 @@ export function PaymentForm({ amount, onSubmit, loading }: PaymentFormProps) {
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      amount: amount ? String(amount) : "",
+      amount: amount ? formatAmountInput(amount) : "",
       paymentMethod: "qris",
       paymentDate: format(new Date(), "yyyy-MM-dd"),
       reference: "",
@@ -84,6 +84,7 @@ export function PaymentForm({ amount, onSubmit, loading }: PaymentFormProps) {
     },
   });
 
+  const amountField = register("amount");
   const selectedDate = watch("paymentDate");
   const busy = loading || uploading;
 
@@ -142,9 +143,13 @@ export function PaymentForm({ amount, onSubmit, loading }: PaymentFormProps) {
           id="pay-amount"
           type="text"
           inputMode="numeric"
-          placeholder="50000"
+          placeholder="100.000"
           aria-invalid={!!errors.amount}
-          {...register("amount")}
+          {...amountField}
+          onChange={(event) => {
+            event.target.value = formatAmountInput(event.target.value);
+            amountField.onChange(event);
+          }}
         />
         {errors.amount && (
           <p className="text-xs text-destructive">{errors.amount.message}</p>
