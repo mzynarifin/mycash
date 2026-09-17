@@ -6,7 +6,7 @@ import { isPaymentMethod } from "@/lib/payment-methods";
 import { isPaymentStatus, type AdminPaymentListItem } from "@/types/payment";
 import { getProofUrl } from "@/lib/payments";
 import type { AuditEvent } from "@/types/audit";
-import type { AdminDashboardData } from "@/types/dashboard";
+import type { AdminDashboardData, AdminBillTransactionGroup } from "@/types/dashboard";
 
 interface BillWithPayments {
   id: string;
@@ -16,6 +16,7 @@ interface BillWithPayments {
   status: string;
   bill_assignments: Array<{
     id: string;
+    amount: number | null;
     payments: Array<{ amount: number; status: string }> | null;
   }> | null;
 }
@@ -37,6 +38,17 @@ interface RecentPaymentRow {
   assignment: { bill_id: string } | null;
 }
 
+interface RecentTransactionRow {
+  id: string;
+  user_id: string;
+  amount: number;
+  payment_method: string;
+  payment_date: string;
+  status: string;
+  reference: string | null;
+  assignment: { bill_id: string } | null;
+}
+
 export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -48,6 +60,7 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
     { count: pendingPaymentCount },
     { data: activeBillRows },
     { data: recentPayRows },
+    { data: recentTxRows },
     { data: auditRows },
   ] = await Promise.all([
     supabase
@@ -63,7 +76,7 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
     supabase
       .from("bills")
       .select(
-        "id, title, amount, due_date, status, bill_assignments(id, payments(amount, status))"
+        "id, title, amount, due_date, status, bill_assignments(id, amount, payments(amount, status))"
       )
       .eq("status", "active")
       .order("due_date", { ascending: true }),
@@ -76,6 +89,14 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(5),
+
+    supabase
+      .from("payments")
+      .select(
+        "id, assignment_id, user_id, amount, payment_method, payment_date, status, reference, assignment:bill_assignments(bill_id)"
+      )
+      .order("created_at", { ascending: false })
+      .limit(100),
 
     supabase
       .from("audit_logs")
@@ -126,6 +147,7 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
 
   for (const bill of bills) {
     const billAmount = Number(bill.amount);
+    const assignmentCount = (bill.bill_assignments ?? []).length;
     let totalVerified = 0;
     let overdueAssignmentsForBill = 0;
 
@@ -134,7 +156,9 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
         .filter((p) => p.status === "verified")
         .reduce((sum, p) => sum + Number(p.amount), 0);
       totalVerified += verified;
-      const remaining = billAmount - verified;
+      // Batas per user = porsi bagian (total / jumlah user).
+      const share = Number(a.amount) || Math.round(billAmount / assignmentCount);
+      const remaining = share - verified;
       if (remaining > 0 && new Date(bill.due_date) < todayDate) {
         overdueAssignmentsForBill += 1;
       }
@@ -182,6 +206,65 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
     };
   }) as AdminPaymentListItem[];
 
+  // Riwayat transaksi dikelompokkan per tagihan (semua status).
+  const txRows = (recentTxRows ?? []) as unknown as RecentTransactionRow[];
+  const txBillIds = [
+    ...new Set(
+      txRows
+        .map((row) => row.assignment?.bill_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const txUserIds = [...new Set(txRows.map((row) => row.user_id))];
+  const [txBillsResult, txProfilesResult] = await Promise.all([
+    txBillIds.length > 0
+      ? supabase.from("bills").select("id, title, amount").in("id", txBillIds)
+      : { data: [] },
+    txUserIds.length > 0
+      ? supabase.from("profiles").select("id, full_name, email").in("id", txUserIds)
+      : { data: [] },
+  ]);
+  const txBillById = new Map(
+    ((txBillsResult.data ?? []) as Array<{ id: string; title: string; amount: number }>).map(
+      (b) => [b.id, b]
+    )
+  );
+  const txProfileById = new Map(
+    ((txProfilesResult.data ?? []) as Array<{
+      id: string;
+      full_name: string;
+      email: string | null;
+    }>).map((p) => [p.id, p])
+  );
+
+  const txGroupMap = new Map<string, AdminBillTransactionGroup>();
+  for (const row of txRows) {
+    const billId = row.assignment?.bill_id;
+    if (!billId) continue;
+    let group = txGroupMap.get(billId);
+    if (!group) {
+      const bill = txBillById.get(billId);
+      group = {
+        billId,
+        billTitle: bill?.title ?? "Tagihan",
+        billAmount: Number(bill?.amount ?? 0),
+        payments: [],
+      };
+      txGroupMap.set(billId, group);
+    }
+    group.payments.push({
+      id: row.id,
+      userName: txProfileById.get(row.user_id)?.full_name?.trim() || "(Tanpa nama)",
+      email: txProfileById.get(row.user_id)?.email ?? null,
+      amount: Number(row.amount),
+      paymentMethod: isPaymentMethod(row.payment_method) ? row.payment_method : "other",
+      paymentDate: row.payment_date,
+      status: isPaymentStatus(row.status) ? row.status : "pending",
+      reference: row.reference,
+    });
+  }
+  const billTransactionGroups = [...txGroupMap.values()];
+
   const recentAuditEvents: AuditEvent[] = (auditRows ?? []).map(
     (row: Record<string, unknown>) => ({
       id: row.id as string,
@@ -203,5 +286,6 @@ export const getAdminDashboard = cache(async (): Promise<AdminDashboardData> => 
     upcomingDueBills,
     recentPendingPayments,
     recentAuditEvents,
+    billTransactionGroups,
   };
 });

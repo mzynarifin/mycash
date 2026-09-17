@@ -121,6 +121,9 @@ export async function createBillAction(input: {
     return { success: false, message: "Terjadi kesalahan saat menugaskan tagihan." };
   }
 
+  // Bagian per user = total / jumlah assignment.
+  await admin.rpc("recompute_bill_share", { p_bill_id: bill.id });
+
   await writeAuditLog({
     actorId: auth.user.id,
     action: "bill.create",
@@ -221,6 +224,8 @@ export async function updateBillAction(input: {
             { onConflict: "bill_id,user_id", ignoreDuplicates: true }
           );
       }
+      // Bagian per user berubah ketika jumlah user bertambah.
+      await admin.rpc("recompute_bill_share", { p_bill_id: parsed.data.id });
     }
   }
 
@@ -409,6 +414,9 @@ export async function assignBillAction(input: {
   if (assignErr) {
     return { success: false, message: "Terjadi kesalahan saat menugaskan tagihan." };
   }
+
+  // Bagian per user berubah ketika jumlah user bertambah.
+  await admin.rpc("recompute_bill_share", { p_bill_id: parsed.data.billId });
 
   await writeAuditLog({
     actorId: auth.user.id,

@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { AdminMetrics } from "@/components/admin/dashboard/admin-metrics";
 import { AdminRecentBills } from "@/components/admin/dashboard/admin-recent-bills";
 import { AdminRecentPayments } from "@/components/admin/dashboard/admin-recent-payments";
+import { AdminTransactionHistory } from "@/components/admin/dashboard/admin-transaction-history";
 import { AdminActivity } from "@/components/admin/dashboard/admin-activity";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -54,6 +55,8 @@ export default async function AdminDashboardPage() {
           <AdminRecentBills items={data.upcomingDueBills} />
         </section>
       </div>
+
+      <AdminTransactionHistory groups={data.billTransactionGroups} />
 
       <AdminActivity items={data.recentAuditEvents} />
     </div>

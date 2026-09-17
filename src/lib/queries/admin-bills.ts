@@ -27,6 +27,7 @@ interface BillRow {
   bill_assignments: Array<{
     id: string;
     user_id: string;
+    amount: number | null;
     assigned_at: string;
     payments: PaymentNested[] | null;
   }> | null;
@@ -86,7 +87,7 @@ export const getAdminBills = cache(
     let query = supabase
       .from("bills")
       .select(
-        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))",
+        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, amount, payments(amount, status))",
         { count: "exact" }
       )
       .order("due_date", { ascending: false });
@@ -119,7 +120,7 @@ export const getAdminBillDetail = cache(
     const { data, error } = await supabase
       .from("bills")
       .select(
-        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))"
+        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, amount, payments(amount, status))"
       )
       .eq("id", billId)
       .maybeSingle();
@@ -151,6 +152,7 @@ export const getAdminBillDetail = cache(
         if (p.status === "verified") verifiedTotal += Number(p.amount);
       }
       const billAmount = Number(row.amount);
+      const share = Number(a.amount) || billAmount;
       const profile = profileById.get(a.user_id);
       return {
         assignmentId: a.id,
@@ -158,8 +160,9 @@ export const getAdminBillDetail = cache(
         userName: profile?.full_name?.trim() || "(Tanpa nama)",
         email: profile?.email ?? null,
         assignedAt: a.assigned_at,
+        amount: share,
         verifiedTotal,
-        remaining: Math.max(0, billAmount - verifiedTotal),
+        remaining: Math.max(0, share - verifiedTotal),
       };
     });
 

@@ -20,6 +20,14 @@ interface BillRow {
   updated_at: string;
 }
 
+interface AssignmentRow {
+  id: string;
+  amount: number | null;
+  assigned_at: string;
+  bills: BillRow | null;
+  payments: PaymentRow[] | null;
+}
+
 interface PaymentRow {
   amount: number;
   status: string;
@@ -60,28 +68,29 @@ export const getUserBills = cache(async (): Promise<UserBill[]> => {
   const { data, error } = await supabase
     .from("bill_assignments")
     .select(
-      "id, assigned_at, bills(id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at), payments(amount, status, reject_reason, created_at)"
+      "id, amount, assigned_at, bills(id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at), payments(amount, status, reject_reason, created_at)"
     )
     .order("assigned_at", { ascending: false });
 
   if (error || !data) return [];
 
   const bills: UserBill[] = [];
-  for (const row of data) {
-    const rawBill = row.bills as BillRow | null;
-    const payments = (row.payments as PaymentRow[] | null) ?? [];
-    if (!rawBill) continue;
-    const bill = mapBill(rawBill);
+  for (const row of data as AssignmentRow[]) {
+    if (!row.bills) continue;
+    const bill = mapBill(row.bills);
+    const payments = row.payments ?? [];
+    // Nominal per user = porsi bagian: total tagihan dibagi jumlah user.
+    const share = Number(row.amount) || bill.amount;
     const paidAmount = sumVerified(payments);
     const pendingAmount = payments.reduce((sum, payment) => payment.status === "pending" ? sum + Number(payment.amount) : sum, 0);
     const latestRejectedReason = [...payments].reverse().find((payment) => payment.status === "rejected")?.reject_reason ?? null;
     bills.push({
       assignmentId: row.id,
-      bill,
+      bill: { ...bill, amount: share },
       paidAmount,
       pendingAmount,
       latestRejectedReason,
-      remaining: Math.max(0, bill.amount - paidAmount),
+      remaining: Math.max(0, share - paidAmount),
     });
   }
 

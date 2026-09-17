@@ -44,7 +44,7 @@ export async function submitPaymentAction(input: {
   // Load the assignment + bill to verify ownership and constraints.
   const { data: assignment, error: assignErr } = await supabase
     .from("bill_assignments")
-    .select("id, bill_id, bills(title, amount, status, due_date)")
+    .select("id, amount, bill_id, bills(title, amount, status, due_date)")
     .eq("id", input.assignmentId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -64,8 +64,11 @@ export async function submitPaymentAction(input: {
     return { success: false, message: "Tagihan sudah tidak aktif." };
   }
 
+  // Batas nominal = porsi per user (total tagihan / jumlah user).
+  const share = Number(assignment.amount) || Number(bill.amount) || 0;
+
   const amount = parseAmount(parsed.data.amount);
-  if (amount <= 0 || amount > Number(bill.amount)) {
+  if (amount <= 0 || amount > share) {
     return { success: false, message: "Nominal pembayaran tidak valid." };
   }
 
@@ -80,7 +83,7 @@ export async function submitPaymentAction(input: {
     (sum, p) => sum + Number(p.amount),
     0
   );
-  const remaining = Number(bill.amount) - paid;
+  const remaining = share - paid;
 
   if (amount > remaining) {
     return { success: false, message: "Nominal melebihi sisa tagihan." };

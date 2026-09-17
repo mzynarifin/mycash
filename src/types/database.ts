@@ -222,18 +222,21 @@ export interface Database {
           id: string;
           bill_id: string;
           user_id: string;
+          amount: number | null;
           assigned_at: string;
         };
         Insert: {
           id?: string;
           bill_id: string;
           user_id: string;
+          amount?: number | null;
           assigned_at?: string;
         };
         Update: {
           id?: string;
           bill_id?: string;
           user_id?: string;
+          amount?: number | null;
           assigned_at?: string;
         };
         Relationships: [
@@ -351,7 +354,12 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      recompute_bill_share: {
+        Args: { p_bill_id: string };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
   };
 }

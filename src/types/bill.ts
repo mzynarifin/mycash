@@ -41,6 +41,7 @@ export interface AdminBillAssignment {
   userName: string;
   email: string | null;
   assignedAt: string;
+  amount: number;
   verifiedTotal: number;
   remaining: number;
 }

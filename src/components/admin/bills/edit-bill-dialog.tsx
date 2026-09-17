@@ -130,8 +130,9 @@ export function EditBillDialog({ open, onOpenChange, bill, onEdited }: EditBillD
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-amount">Jumlah *</Label>
+            <Label htmlFor="edit-amount">Total Nominal *</Label>
             <Input id="edit-amount" inputMode="numeric" {...register("amount")} />
+            <p className="text-xs text-muted-foreground">Dibagi rata ke tiap user yang ditugaskan.</p>
             {errors.amount && (
               <p className="text-xs text-destructive">{errors.amount.message}</p>
             )}

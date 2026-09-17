@@ -23,6 +23,7 @@ interface AdminPaymentRow {
   assignment: {
     bill_id: string;
     user_id: string;
+    amount: number | null;
     bills: { id: string; title: string; amount: number } | null;
   } | null;
 }
@@ -41,7 +42,7 @@ export const getAdminPayments = cache(
     let query = supabase
       .from("payments")
       .select(
-        "id, assignment_id, user_id, amount, payment_method, payment_date, status, reject_reason, notes, reference, created_at, reviewed_at, proof_object, assignment:bill_assignments(bill_id, user_id, bills(id, title, amount))",
+        "id, assignment_id, user_id, amount, payment_method, payment_date, status, reject_reason, notes, reference, created_at, reviewed_at, proof_object, assignment:bill_assignments(bill_id, user_id, amount, bills(id, title, amount))",
         { count: "exact" }
       )
       .order("created_at", { ascending: false });
@@ -69,7 +70,7 @@ export const getAdminPayments = cache(
       email: profileById.get(row.user_id)?.email ?? null,
       billId: row.assignment?.bill_id ?? "",
       billTitle: row.assignment?.bills?.title ?? "Tagihan",
-      billAmount: Number(row.assignment?.bills?.amount ?? 0),
+      billAmount: Number(row.assignment?.amount ?? row.assignment?.bills?.amount ?? 0),
       amount: Number(row.amount),
       paymentMethod: isPaymentMethod(row.payment_method) ? row.payment_method : "other",
       paymentDate: row.payment_date,

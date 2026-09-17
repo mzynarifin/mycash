@@ -75,8 +75,9 @@ export function CreateBillDialog({ open, onOpenChange, users, onCreated }: Props
                 <SelectContent>{BILL_CATEGORIES.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            <Field label="Nominal" error={errors.amount?.message}>
+            <Field label="Total Nominal" error={errors.amount?.message}>
               <Input id="bill-amount" inputMode="numeric" placeholder="500.000" aria-invalid={!!errors.amount} {...register("amount")} />
+              <p className="mt-1 text-xs text-muted-foreground">Dibagi rata ke tiap user yang ditugaskan.</p>
             </Field>
             <Field label="Deskripsi" optional error={errors.description?.message} className="sm:col-span-2">
               <Textarea id="bill-description" rows={2} placeholder="Ringkasan tagihan" {...register("description")} />

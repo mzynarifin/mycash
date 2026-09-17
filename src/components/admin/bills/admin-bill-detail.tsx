@@ -183,8 +183,8 @@ export function AdminBillDetailClient({ bill, users }: AdminBillDetailClientProp
             </li>
           ) : (
             bill.assignments.map((a) => {
-              const pct = bill.bill.amount > 0
-                ? Math.min(100, Math.round((a.verifiedTotal / bill.bill.amount) * 100))
+              const pct = a.amount > 0
+                ? Math.min(100, Math.round((a.verifiedTotal / a.amount) * 100))
                 : 0;
               const complete = a.remaining <= 0;
               return (
@@ -198,7 +198,7 @@ export function AdminBillDetailClient({ bill, users }: AdminBillDetailClientProp
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-foreground truncate">{a.userName}</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums shrink-0">
-                        {formatCurrency(a.verifiedTotal)} / {formatCurrency(bill.bill.amount)}
+                        {formatCurrency(a.verifiedTotal)} / {formatCurrency(a.amount)}
                       </p>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">

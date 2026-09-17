@@ -1,5 +1,22 @@
 import type { AuditEvent } from "@/types/audit";
-import type { AdminPaymentListItem } from "@/types/payment";
+import type { PaymentMethod } from "@/types/expense";
+import type { AdminPaymentListItem, PaymentStatus } from "@/types/payment";
+
+export interface AdminBillTransactionGroup {
+  billId: string;
+  billTitle: string;
+  billAmount: number;
+  payments: Array<{
+    id: string;
+    userName: string;
+    email: string | null;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    paymentDate: string;
+    status: PaymentStatus;
+    reference: string | null;
+  }>;
+}
 
 export interface AdminDashboardData {
   activeUsers: number;
@@ -16,4 +33,5 @@ export interface AdminDashboardData {
   }>;
   recentPendingPayments: AdminPaymentListItem[];
   recentAuditEvents: AuditEvent[];
+  billTransactionGroups: AdminBillTransactionGroup[];
 }
