@@ -14,6 +14,7 @@ interface BillRow {
   issue_date: string;
   due_date: string;
   status: string;
+  audience: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -38,6 +39,7 @@ function mapBill(raw: BillRow): Bill {
     issueDate: raw.issue_date,
     dueDate: raw.due_date,
     status: isBillStatus(raw.status) ? raw.status : "active",
+    audience: raw.audience === "all" ? "all" : "selected",
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
   };
@@ -58,7 +60,7 @@ export const getUserBills = cache(async (): Promise<UserBill[]> => {
   const { data, error } = await supabase
     .from("bill_assignments")
     .select(
-      "id, assigned_at, bills(id, title, description, category, notes, reference, amount, issue_date, due_date, status, created_by, created_at, updated_at), payments(amount, status, reject_reason, created_at)"
+      "id, assigned_at, bills(id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at), payments(amount, status, reject_reason, created_at)"
     )
     .order("assigned_at", { ascending: false });
 

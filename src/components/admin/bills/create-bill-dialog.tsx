@@ -101,7 +101,7 @@ export function CreateBillDialog({ open, onOpenChange, users, onCreated }: Props
               ))}
             </div>
             {mode === "all" ? (
-              <div className="rounded-md border border-border bg-muted/30 px-3 py-3 text-sm"><span className="font-medium text-foreground">Dikirim ke {users.length} user aktif</span><span className="block text-xs text-muted-foreground">Tagihan otomatis masuk ke semua user yang aktif dan tidak ditangguhkan.</span></div>
+              <div className="rounded-md border border-border bg-muted/30 px-3 py-3 text-sm"><span className="font-medium text-foreground">Dikirim ke {users.length} user aktif</span><span className="block text-xs text-muted-foreground">Tagihan otomatis masuk ke semua user aktif, termasuk user yang mendaftar setelah ini.</span></div>
             ) : (
               <>
                 <BillUserPicker users={users} selectedIds={selectedIds} onChange={(ids) => { setValue("userIds", ids, { shouldValidate: true }); setUserTouched(true); }} multiple={mode === "multiple"} search={userSearch} onSearchChange={setUserSearch} />

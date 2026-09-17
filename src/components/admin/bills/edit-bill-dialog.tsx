@@ -14,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -56,6 +63,7 @@ export function EditBillDialog({ open, onOpenChange, bill, onEdited }: EditBillD
       amount: String(bill.amount),
       issueDate: bill.issueDate,
       dueDate: bill.dueDate,
+      audience: bill.audience,
     },
   });
 
@@ -185,6 +193,28 @@ export function EditBillDialog({ open, onOpenChange, bill, onEdited }: EditBillD
                 <p className="text-xs text-destructive">{errors.dueDate.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Target Penerima</Label>
+            <Select
+              value={watch("audience")}
+              onValueChange={(value) =>
+                value && setValue("audience", value as "selected" | "all", { shouldValidate: true })
+              }
+            >
+              <SelectTrigger className="w-full" aria-label="Target penerima">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="selected">User terpilih saja</SelectItem>
+                <SelectItem value="all">Semua user (termasuk pendaftar baru)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Pilih <span className="font-medium text-foreground">Semua user</span> agar tagihan otomatis
+              muncul untuk user yang mendaftar setelah ini.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

@@ -69,6 +69,7 @@ export const updateBillSchema = z
     amount: amountString,
     issueDate: z.string().min(1, "Tanggal wajib diisi"),
     dueDate: z.string().min(1, "Tanggal jatuh tempo wajib diisi"),
+    audience: z.enum(["selected", "all"]),
   })
   .refine((d) => d.dueDate >= d.issueDate, {
     message: "Tanggal jatuh tempo tidak boleh sebelum tanggal terbit",

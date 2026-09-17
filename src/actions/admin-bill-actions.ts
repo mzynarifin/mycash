@@ -102,6 +102,7 @@ export async function createBillAction(input: {
       amount: parseAmount(parsed.data.amount),
       issue_date: parsed.data.issueDate,
       due_date: parsed.data.dueDate,
+      audience: parsed.data.assignmentMode === "all" ? "all" : "selected",
       created_by: auth.user.id,
     })
     .select("id")
@@ -149,8 +150,9 @@ export async function updateBillAction(input: {
   amount: string;
   issueDate: string;
   dueDate: string;
+  audience?: "selected" | "all";
 }): Promise<ActionResult> {
-  const parsed = updateBillSchema.safeParse(input);
+  const parsed = updateBillSchema.safeParse({ ...input, audience: input.audience ?? "selected" });
   if (!parsed.success) {
     return {
       success: false,
@@ -180,6 +182,7 @@ export async function updateBillAction(input: {
       amount: parseAmount(parsed.data.amount),
       issue_date: parsed.data.issueDate,
       due_date: parsed.data.dueDate,
+      audience: parsed.data.audience,
     })
     .eq("id", parsed.data.id)
     .eq("status", "active")
@@ -193,12 +196,40 @@ export async function updateBillAction(input: {
     };
   }
 
+  // Beralih ke "semua user": tugaskan ke seluruh user aktif saat ini.
+  // Pendaftar baru otomatis ditangani trigger assign_broadcast_bills.
+  if (parsed.data.audience === "all") {
+    const { data: roleRows } = await admin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "user");
+    const endUserIds = (roleRows ?? []).map((r) => r.user_id as string);
+
+    if (endUserIds.length > 0) {
+      const { data: profiles } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("is_suspended", false)
+        .not("nim", "is", null)
+        .in("id", endUserIds);
+      const userIds = (profiles ?? []).map((p) => p.id as string);
+      if (userIds.length > 0) {
+        await admin
+          .from("bill_assignments")
+          .upsert(
+            userIds.map((userId) => ({ bill_id: parsed.data.id, user_id: userId })),
+            { onConflict: "bill_id,user_id", ignoreDuplicates: true }
+          );
+      }
+    }
+  }
+
   await writeAuditLog({
     actorId: auth.user.id,
     action: "bill.update",
     entityType: "bills",
     entityId: parsed.data.id,
-    detail: { title: parsed.data.title.trim() },
+    detail: { title: parsed.data.title.trim(), audience: parsed.data.audience },
   });
 
   revalidateBillPaths();

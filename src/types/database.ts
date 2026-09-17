@@ -178,6 +178,7 @@ export interface Database {
           issue_date: string;
           due_date: string;
           status: string;
+          audience: string;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -193,6 +194,7 @@ export interface Database {
           issue_date?: string;
           due_date: string;
           status?: string;
+          audience?: string;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -208,6 +210,7 @@ export interface Database {
           issue_date?: string;
           due_date?: string;
           status?: string;
+          audience?: string;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

@@ -1,5 +1,7 @@
 export type BillStatus = "active" | "cancelled" | "archived";
 
+export type BillAudience = "selected" | "all";
+
 export interface Bill {
   id: string;
   title: string;
@@ -11,6 +13,7 @@ export interface Bill {
   issueDate: string;
   dueDate: string;
   status: BillStatus;
+  audience: BillAudience;
   createdAt: string;
   updatedAt: string;
 }

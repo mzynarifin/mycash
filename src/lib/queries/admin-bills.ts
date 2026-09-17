@@ -20,6 +20,7 @@ interface BillRow {
   issue_date: string;
   due_date: string;
   status: string;
+  audience: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +57,7 @@ function toListItem(row: BillRow): AdminBillListItem {
       issueDate: row.issue_date,
       dueDate: row.due_date,
       status: parseStatus(row.status),
+      audience: row.audience === "all" ? "all" : "selected",
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     },
@@ -84,7 +86,7 @@ export const getAdminBills = cache(
     let query = supabase
       .from("bills")
       .select(
-        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))",
+        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))",
         { count: "exact" }
       )
       .order("due_date", { ascending: false });
@@ -117,7 +119,7 @@ export const getAdminBillDetail = cache(
     const { data, error } = await supabase
       .from("bills")
       .select(
-        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))"
+        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, audience, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))"
       )
       .eq("id", billId)
       .maybeSingle();
