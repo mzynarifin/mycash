@@ -36,6 +36,7 @@ export interface AdminPaymentListItem {
   notes: string | null;
   reference: string | null;
   createdAt: string;
+  reviewedAt: string | null;
   proofObject: string | null;
   proofUrl: string | null;
   billAmount: number;

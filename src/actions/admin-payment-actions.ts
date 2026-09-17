@@ -117,3 +117,55 @@ export async function reviewPaymentAction(input: {
   revalidatePaymentPaths();
   return { success: true };
 }
+
+export async function deletePaymentAction(paymentId: string): Promise<ActionResult> {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: "Sesi Anda telah berakhir. Silakan login kembali." };
+  }
+  if ((await getUserRoleFromClient(supabase, user.id)) !== "admin") {
+    return { success: false, message: "Akses ditolak." };
+  }
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return { success: false, message: "Konfigurasi server tidak lengkap." };
+  }
+
+  const { data: existing } = await admin
+    .from("payments")
+    .select("id, assignment_id, amount, status, proof_object")
+    .eq("id", paymentId)
+    .maybeSingle();
+  if (!existing) {
+    return { success: false, message: "Pembayaran tidak ditemukan." };
+  }
+
+  const { error } = await admin.from("payments").delete().eq("id", paymentId);
+  if (error) {
+    return { success: false, message: "Terjadi kesalahan saat menghapus pembayaran." };
+  }
+
+  if (existing.proof_object) {
+    await admin.storage.from("bukti-pembayaran").remove([existing.proof_object]);
+  }
+
+  await writeAuditLog({
+    actorId: user.id,
+    action: "payment.delete",
+    entityType: "payments",
+    entityId: paymentId,
+    detail: {
+      assignmentId: existing.assignment_id,
+      amount: Number(existing.amount),
+      status: existing.status,
+    },
+  });
+
+  revalidatePaymentPaths();
+  return { success: true };
+}

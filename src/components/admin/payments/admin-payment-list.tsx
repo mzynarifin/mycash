@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AdminPaymentTable } from "@/components/admin/payments/admin-payment-table";
 import { ReviewDialog } from "@/components/admin/payments/review-dialog";
+import { PaymentDetailDialog } from "@/components/admin/payments/payment-detail-dialog";
 
 interface AdminPaymentListContainerProps {
   payments: AdminPaymentListItem[];
@@ -39,6 +40,7 @@ export function AdminPaymentListContainer({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [reviewTarget, setReviewTarget] = useState<AdminPaymentListItem | null>(null);
+  const [detailTarget, setDetailTarget] = useState<AdminPaymentListItem | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
@@ -115,7 +117,11 @@ export function AdminPaymentListContainer({
       </div>
 
       <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <AdminPaymentTable payments={payments} onReview={(p) => setReviewTarget(p)} />
+        <AdminPaymentTable
+          payments={payments}
+          onReview={(p) => setReviewTarget(p)}
+          onDetail={(p) => setDetailTarget(p)}
+        />
       </div>
 
       {totalPages > 1 && (
@@ -159,6 +165,19 @@ export function AdminPaymentListContainer({
         }}
         payment={reviewTarget}
         onReviewed={() => router.refresh()}
+      />
+
+      <PaymentDetailDialog
+        open={!!detailTarget}
+        onOpenChange={(open) => {
+          if (!open) setDetailTarget(null);
+        }}
+        payment={detailTarget}
+        onReview={(p) => {
+          setDetailTarget(null);
+          setReviewTarget(p);
+        }}
+        onDeleted={() => router.refresh()}
       />
     </div>
   );

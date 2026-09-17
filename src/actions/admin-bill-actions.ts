@@ -279,31 +279,38 @@ export async function deleteBillAction(id: string): Promise<ActionResult> {
   const admin = createAdminClient();
   if (!admin) return { success: false, message: "Konfigurasi server tidak lengkap." };
 
+  const { data: bill } = await admin
+    .from("bills")
+    .select("id, title, amount")
+    .eq("id", id)
+    .maybeSingle();
+  if (!bill) return { success: false, message: "Tagihan tidak ditemukan." };
+
   const { data: assignmentRows } = await admin
     .from("bill_assignments")
     .select("id")
     .eq("bill_id", id);
   const assignmentIds = (assignmentRows ?? []).map((a) => a.id as string);
 
-  const { count: paymentCount } =
+  const { data: paymentRows } =
     assignmentIds.length > 0
       ? await admin
           .from("payments")
-          .select("id", { count: "exact", head: true })
+          .select("id, proof_object")
           .in("assignment_id", assignmentIds)
-      : { count: 0 };
+      : { data: [] };
+  const proofs = (paymentRows ?? [])
+    .map((p) => p.proof_object as string | null)
+    .filter((p): p is string => Boolean(p));
 
-  if ((paymentCount ?? 0) > 0) {
-    return {
-      success: false,
-      message:
-        "Tagihan memiliki riwayat pembayaran dan tidak dapat dihapus. Batalkan atau arsipkan sebagai gantinya.",
-    };
-  }
-
+  // Cascade menghapus assignments + payments. Riwayat ikut terhapus.
   const { error } = await admin.from("bills").delete().eq("id", id);
   if (error) {
     return { success: false, message: "Terjadi kesalahan saat menghapus tagihan." };
+  }
+
+  if (proofs.length > 0) {
+    await admin.storage.from("bukti-pembayaran").remove(proofs);
   }
 
   await writeAuditLog({
@@ -311,6 +318,12 @@ export async function deleteBillAction(id: string): Promise<ActionResult> {
     action: "bill.delete",
     entityType: "bills",
     entityId: id,
+    detail: {
+      title: bill.title,
+      amount: Number(bill.amount),
+      assignments: assignmentIds.length,
+      payments: (paymentRows ?? []).length,
+    },
   });
   revalidateBillPaths();
   return { success: true };

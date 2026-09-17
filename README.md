@@ -194,14 +194,13 @@ Buka <http://localhost:3000>.
 2. Mengambil & menyimpan `SUPABASE_SERVICE_ROLE_KEY` ke `.env.local` bila belum ada.
 3. Membuat akun demo + data contoh.
 
-Akun demo (login pakai **NIM**):
+Akun admin (login pakai **NIM**):
 
 | NIM | Password | Role |
 |-----|----------|------|
-| `000000000001` | `Admin123!` | admin |
-| `221011400123` | `Demo123!` | user |
-| `221011400124` | `Suspend123!` | user (ditangguhkan) |
+| `241011400261` | `Admin123!` | admin |
 
+> Ganti password ini setelah login pertama. Akun user dibuat oleh admin dari `/admin/users` (NIM + password).
 > Jika `SUPABASE_ACCESS_TOKEN` tidak diisi, langkah migrasi dilewati dan hanya seeding yang dijalankan (tabel harus sudah ada).
 
 ---

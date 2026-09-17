@@ -28,7 +28,6 @@ interface BillRow {
     user_id: string;
     assigned_at: string;
     payments: PaymentNested[] | null;
-    profiles?: { full_name: string; email: string | null } | null;
   }> | null;
 }
 
@@ -118,7 +117,7 @@ export const getAdminBillDetail = cache(
     const { data, error } = await supabase
       .from("bills")
       .select(
-        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, profiles(full_name, email), payments(amount, status))"
+        "id, title, description, category, notes, reference, amount, issue_date, due_date, status, created_by, created_at, updated_at, bill_assignments(id, user_id, assigned_at, payments(amount, status))"
       )
       .eq("id", billId)
       .maybeSingle();
@@ -128,17 +127,34 @@ export const getAdminBillDetail = cache(
     const row = data as unknown as BillRow;
     const base = toListItem(row);
 
+    // Resolve names separately: bill_assignments has no FK to profiles
+    // (user_id references auth.users), so PostgREST cannot embed profiles.
+    const userIds = [
+      ...new Set((row.bill_assignments ?? []).map((a) => a.user_id)),
+    ];
+    const { data: profiles } =
+      userIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", userIds)
+        : { data: [] };
+    const profileById = new Map(
+      (profiles ?? []).map((p) => [p.id as string, p])
+    );
+
     const assignments = (row.bill_assignments ?? []).map((a) => {
       let verifiedTotal = 0;
       for (const p of a.payments ?? []) {
         if (p.status === "verified") verifiedTotal += Number(p.amount);
       }
       const billAmount = Number(row.amount);
+      const profile = profileById.get(a.user_id);
       return {
         assignmentId: a.id,
         userId: a.user_id,
-        userName: a.profiles?.full_name?.trim() || "(Tanpa nama)",
-        email: a.profiles?.email ?? null,
+        userName: profile?.full_name?.trim() || "(Tanpa nama)",
+        email: profile?.email ?? null,
         assignedAt: a.assigned_at,
         verifiedTotal,
         remaining: Math.max(0, billAmount - verifiedTotal),

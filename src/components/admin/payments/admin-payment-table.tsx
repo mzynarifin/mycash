@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 interface AdminPaymentTableProps {
   payments: AdminPaymentListItem[];
   onReview: (payment: AdminPaymentListItem) => void;
+  onDetail: (payment: AdminPaymentListItem) => void;
 }
 
 const STATUS_ICON = {
@@ -27,7 +28,7 @@ const STATUS_VARIANT = {
   rejected: "destructive",
 } as const;
 
-export function AdminPaymentTable({ payments, onReview }: AdminPaymentTableProps) {
+export function AdminPaymentTable({ payments, onReview, onDetail }: AdminPaymentTableProps) {
   if (payments.length === 0) {
     return (
       <EmptyState
@@ -95,7 +96,7 @@ export function AdminPaymentTable({ payments, onReview }: AdminPaymentTableProps
                   {formatDateMedium(item.paymentDate)}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     {item.proofUrl && (
                       <a
                         href={item.proofUrl}
@@ -107,6 +108,9 @@ export function AdminPaymentTable({ payments, onReview }: AdminPaymentTableProps
                         <Paperclip size={15} aria-hidden="true" />
                       </a>
                     )}
+                    <Button variant="outline" size="sm" onClick={() => onDetail(item)}>
+                      Detail
+                    </Button>
                     {item.status === "pending" && (
                       <Button size="sm" onClick={() => onReview(item)}>
                         Review
@@ -161,6 +165,9 @@ export function AdminPaymentTable({ payments, onReview }: AdminPaymentTableProps
                     Bukti
                   </a>
                 )}
+                <Button variant="outline" size="sm" onClick={() => onDetail(item)}>
+                  Detail
+                </Button>
                 {item.status === "pending" && (
                   <Button size="sm" onClick={() => onReview(item)}>
                     Review

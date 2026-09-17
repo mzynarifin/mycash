@@ -137,7 +137,7 @@ export function AdminBillListContainer({ bills, users, search, status, page, per
             <AlertDialogTitle>{target?.kind === "delete" ? "Hapus tagihan?" : target?.kind === "archive" ? "Arsipkan tagihan?" : "Batalkan tagihan?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {target?.kind === "delete"
-                ? "Tagihan beserta seluruh penugasannya akan dihapus permanen. Tagihan berisi riwayat pembayaran tidak dapat dihapus."
+                ? "Tagihan beserta seluruh penugasan, riwayat pembayaran, dan bukti di dalamnya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan."
                 : target?.kind === "archive"
                   ? "Tagihan dipindahkan dari daftar aktif, tetapi seluruh riwayat tetap tersimpan."
                   : "Pengguna tidak dapat lagi melakukan pembayaran pada tagihan ini."}

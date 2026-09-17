@@ -18,6 +18,7 @@ interface AdminPaymentRow {
   notes: string | null;
   reference: string | null;
   created_at: string;
+  reviewed_at: string | null;
   proof_object: string | null;
   assignment: {
     bill_id: string;
@@ -40,7 +41,7 @@ export const getAdminPayments = cache(
     let query = supabase
       .from("payments")
       .select(
-        "id, assignment_id, user_id, amount, payment_method, payment_date, status, reject_reason, notes, reference, created_at, proof_object, assignment:bill_assignments(bill_id, user_id, bills(id, title, amount))",
+        "id, assignment_id, user_id, amount, payment_method, payment_date, status, reject_reason, notes, reference, created_at, reviewed_at, proof_object, assignment:bill_assignments(bill_id, user_id, bills(id, title, amount))",
         { count: "exact" }
       )
       .order("created_at", { ascending: false });
@@ -77,6 +78,7 @@ export const getAdminPayments = cache(
       notes: row.notes,
       reference: row.reference,
       createdAt: row.created_at,
+      reviewedAt: row.reviewed_at,
       proofObject: row.proof_object,
       proofUrl: getProofUrl(row.proof_object),
     }));
