@@ -44,3 +44,6 @@ next-env.d.ts
 /.opencode
 /.agents
 /.claude
+
+# generated design system artifacts
+/design-system
